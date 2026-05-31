@@ -458,6 +458,9 @@ kubectl get application go-web-app -n argocd -o yaml
 
 ---
 
+<img width="1919" height="1072" alt="image" src="https://github.com/user-attachments/assets/05aee425-947b-4ecc-ae2b-5cfa388926de" />
+
+
 ## Screenshot
 
 ![Website](static/images/image.png)
