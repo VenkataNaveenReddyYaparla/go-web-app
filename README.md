@@ -151,7 +151,7 @@ go build -o main.exe .
 Verify the binary was created:
 
 ```powershell
-Get-ChildItem .\main.exe
+ .\main.exe
 ```
 
 Run the application:
@@ -169,7 +169,7 @@ http://localhost:8080/home
 Verify the running app from another terminal:
 
 ```powershell
-Invoke-WebRequest http://localhost:8080/home
+ http://localhost:8080/home
 ```
 
 ## Build With Docker
