@@ -22,6 +22,7 @@ Install these tools before running the full project:
 - AWS CLI, if you deploy to Amazon EKS
 - kubectl
 - Helm
+- Argo CD CLI, if you want to manage Argo CD from the terminal
 - A Kubernetes cluster such as Minikube, Kind, Docker Desktop Kubernetes, EKS, AKS, or GKE
 - Argo CD, if you want GitOps deployment
 
@@ -34,6 +35,7 @@ docker --version
 aws --version
 kubectl version --client
 helm version
+argocd version --client
 ```
 
 ## Installation
@@ -309,6 +311,70 @@ Uninstall:
 
 ```bash
 helm uninstall go-web-app
+```
+
+## Install Argo CD
+
+Create the Argo CD namespace:
+
+```bash
+kubectl create namespace argocd
+```
+
+Verify the namespace:
+
+```bash
+kubectl get namespace argocd
+```
+
+Install Argo CD:
+
+```bash
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+Verify the Argo CD pods:
+
+```bash
+kubectl get pods -n argocd
+kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+```
+
+Expose the Argo CD server with a LoadBalancer service:
+
+```bash
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+```
+
+Verify the service and wait for the external address:
+
+```bash
+kubectl get svc argocd-server -n argocd
+```
+
+Verify the Argo CD CLI:
+
+```bash
+argocd version --client
+```
+
+Get the initial admin password:
+
+```bash
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}"
+```
+
+Decode the password:
+
+```bash
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+```
+
+PowerShell decode:
+
+```powershell
+$password = kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}"
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($password))
 ```
 
 ## Deploy With Argo CD
