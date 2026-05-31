@@ -1,4 +1,4 @@
-# go-web-app — DevOps End-to-End Practice Project
+# go-web-app - DevOps End-to-End Practice Project
 
 A production-style DevOps pipeline built around a lightweight Go web application. The project covers everything from local development through containerization, Kubernetes deployment, GitOps with Argo CD, and fully automated CI/CD via GitHub Actions.
 
