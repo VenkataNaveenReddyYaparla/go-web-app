@@ -19,6 +19,7 @@ Install these tools before running the full project:
 - Git
 - Go 1.23 or newer
 - Docker
+- AWS CLI, if you deploy to Amazon EKS
 - kubectl
 - Helm
 - A Kubernetes cluster such as Minikube, Kind, Docker Desktop Kubernetes, EKS, AKS, or GKE
@@ -30,6 +31,7 @@ Check your versions:
 git --version
 go version
 docker --version
+aws --version
 kubectl version --client
 helm version
 ```
@@ -49,10 +51,22 @@ Download Go modules:
 go mod download
 ```
 
+Verify module dependencies:
+
+```bash
+go mod verify
+```
+
 Run tests:
 
 ```bash
 go test ./...
+```
+
+Verify the test run:
+
+```bash
+go test -v ./...
 ```
 
 Start the application locally:
@@ -65,6 +79,12 @@ Open the app:
 
 ```text
 http://localhost:8080/home
+```
+
+Verify the app responds:
+
+```bash
+curl http://localhost:8080/home
 ```
 
 ## Application Routes
@@ -120,12 +140,50 @@ Run tests:
 go test ./...
 ```
 
+## Build And Run Locally
+
+Build the application binary:
+
+```powershell
+go build -o main.exe .
+```
+
+Verify the binary was created:
+
+```powershell
+Get-ChildItem .\main.exe
+```
+
+Run the application:
+
+```powershell
+.\main.exe
+```
+
+Open the app:
+
+```text
+http://localhost:8080/home
+```
+
+Verify the running app from another terminal:
+
+```powershell
+Invoke-WebRequest http://localhost:8080/home
+```
+
 ## Build With Docker
 
 Build the image:
 
 ```bash
 docker build -t go-web-app:local .
+```
+
+Verify the image:
+
+```bash
+docker images go-web-app
 ```
 
 Run the container:
@@ -138,6 +196,55 @@ Open the app:
 
 ```text
 http://localhost:8080/home
+```
+
+Verify the container is running:
+
+```bash
+docker ps
+curl http://localhost:8080/home
+```
+
+## Connect To Amazon EKS
+
+Verify AWS CLI authentication:
+
+```bash
+aws sts get-caller-identity
+```
+
+Update your local kubeconfig for the EKS cluster:
+
+```bash
+aws eks update-kubeconfig --region us-east-1 --name demo-cluster
+```
+
+Verify the Kubernetes context:
+
+```bash
+kubectl config current-context
+kubectl get nodes
+```
+
+## Install NGINX Ingress Controller On EKS
+
+Install the AWS provider manifest for ingress-nginx:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/aws/deploy.yaml
+```
+
+Verify the controller pods and service:
+
+```bash
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+```
+
+Wait for the external load balancer address:
+
+```bash
+kubectl get svc ingress-nginx-controller -n ingress-nginx
 ```
 
 ## Deploy With Kubernetes Manifests
@@ -154,6 +261,13 @@ Check the resources:
 kubectl get pods
 kubectl get svc
 kubectl get ingress
+```
+
+Verify the application pods are ready:
+
+```bash
+kubectl rollout status deployment/go-web-app
+kubectl get endpoints
 ```
 
 Remove the deployment:
@@ -176,6 +290,13 @@ Check the release:
 helm list
 kubectl get pods
 kubectl get svc
+```
+
+Verify the Helm deployment:
+
+```bash
+helm status go-web-app
+kubectl rollout status deployment/go-web-app
 ```
 
 Upgrade after changes:
@@ -231,6 +352,14 @@ Apply it:
 kubectl apply -f application.yaml
 ```
 
+Verify Argo CD created and synced the application:
+
+```bash
+kubectl get application go-web-app -n argocd
+kubectl get pods
+kubectl get svc
+```
+
 Argo CD can sync the Helm chart and keep the Kubernetes deployment updated from Git.
 
 ## CI/CD Workflow
@@ -253,4 +382,4 @@ TOKEN
 
 ## Screenshot
 
-![Website](static/images/golang-website.png)
+![Website](static/images/image.png)
