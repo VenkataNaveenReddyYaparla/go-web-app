@@ -244,8 +244,6 @@ docker ps
 curl http://localhost:8080/home
 ```
 
----
-
 ## Kubernetes Deployment
 
 ### Connect to Amazon EKS
