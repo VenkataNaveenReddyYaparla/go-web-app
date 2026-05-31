@@ -458,8 +458,32 @@ kubectl get application go-web-app -n argocd -o yaml
 
 ---
 
-<img width="1919" height="1072" alt="image" src="https://github.com/user-attachments/assets/05aee425-947b-4ecc-ae2b-5cfa388926de" />
+FROM golang:1.23 AS base
 
+WORKDIR /app
+
+COPY go.mod .
+
+RUN go mod download
+
+COPY . .
+
+RUN go build -o main .
+
+#final image 
+FROM gcr.io/distroless/base
+
+COPY --from=base /app/main .
+
+COPY --from=base /app/static ./static
+
+EXPOSE 8080
+
+CMD ["./main"]
+
+
+AiGen image of Dockerfile
+<img width="1919" height="1072" alt="image" src="https://github.com/user-attachments/assets/05aee425-947b-4ecc-ae2b-5cfa388926de" />
 
 ## Screenshot
 
