@@ -1,19 +1,28 @@
-<DocType html>
+<!DOCTYPE html>
 
-<html>
+<html lang="en">
     <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Learn DevOps from Basics</title>
         <style>
             body {
+                font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
+                color: #1f2937;
+                background: #f4f7fb;
+            }
+
+            header, footer {
+                background-color: #1f2937;
+                color: #fff;
+                text-align: center;
             }
 
             header {
-                background-color: #333;
-                color: #fff;
                 padding: 10px 0;
-                text-align: center;
             }
 
             nav ul {
@@ -23,26 +32,38 @@
 
             nav ul li {
                 display: inline;
-                margin-right: 10px;
+                margin-right: 14px;
             }
 
             nav ul li a {
                 color: #fff;
                 text-decoration: none;
+                font-weight: bold;
             }
 
             main {
-                padding: 20px;
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 36px 20px 90px;
             }
 
             section {
-                margin-bottom: 20px;
+                background: #fff;
+                border-left: 5px solid #7c3aed;
+                margin-bottom: 22px;
+                padding: 22px;
+                box-shadow: 0 4px 18px rgba(31, 41, 55, 0.08);
+            }
+
+            h1, h2 {
+                margin-top: 0;
+            }
+
+            ul {
+                line-height: 1.8;
             }
 
             footer {
-                background-color: #333;
-                color: #fff;
-                text-align: center;
                 padding: 10px 0;
                 position: fixed;
                 bottom: 0;
@@ -69,24 +90,30 @@
                 <p>It aims to shorten the systems development life cycle and provide continuous delivery with high software quality. DevOps is complementary with Agile software development; several DevOps aspects came from Agile methodology</p>    
 
                 <h2>Main Tutorials</h2>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvIKMhk8WhzN1pYoJ1YU8Csa">DevOps Zero to Hero</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvLNOxX0RfndiYSt1Le9azze">AWS Zero to Hero</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvIcxgCUyBHVOcWs0Krjx9xR">Azure Zero to Hero</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvI0O4PeKVV1-yJoX2AqIWuf">Terraform Zero to Hero</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvKwTyYNJCUwGPvql0TrsPgv">Python Zero to Hero</a></p>
+                <ul>
+                    <li>DevOps foundations and delivery workflows</li>
+                    <li>AWS cloud basics for application deployment</li>
+                    <li>Azure cloud basics for modern infrastructure</li>
+                    <li>Terraform for infrastructure as code</li>
+                    <li>Python scripting for automation</li>
+                </ul>
 
                 <h2>Additional Tutorials</h2>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvKv4MFW35XRskZbQbrt6ep-">Networking Fundamentals</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvLxd5nmtmORCmhD5jkrNbuE">Ansible Zero to Hero</a></p>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvKu7OZpgj1-MzJFqZ8RBp6f">GitOps Zero to Hero</a></p>
+                <ul>
+                    <li>Networking fundamentals for containers and clusters</li>
+                    <li>Ansible for configuration management</li>
+                    <li>GitOps with Kubernetes, Helm, and Argo CD</li>
+                </ul>
 
                 <h2>Troubleshooting Tutorials</h2>
-                <p><a href="https://www.youtube.com/playlist?list=PLdpzxOOAlwvIrFBI1farpLS_OSUBXJMLX">Troubleshooting Kubernetes</a></p>
+                <ul>
+                    <li>Kubernetes troubleshooting with pods, services, events, and logs</li>
+                </ul>
             </section>
         </main>
 
         <footer>
-            <p>&copy; Abhishek.Veeramalla</p>
+            <p>&copy; DevOpsified Learning Hub</p>
         </footer>
     </body>
 </html>
