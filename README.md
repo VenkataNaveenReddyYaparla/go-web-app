@@ -456,12 +456,6 @@ kubectl get application go-web-app -n argocd -o yaml
 # Check the GitHub Actions run logs for the docker/push step
 ```
 
-**Go module errors**
-```bash
-go mod tidy
-go mod verify
-```
-
 ---
 
 ## Screenshot
