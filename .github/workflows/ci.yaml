@@ -23,7 +23,7 @@ jobs:
         submodules: 'false'
 
     - name: Set up Go 1.23
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: 1.23
 
@@ -43,7 +43,7 @@ jobs:
         submodules: 'false'
 
     - name: Set up Go 1.23 for linting
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: 1.23
 
