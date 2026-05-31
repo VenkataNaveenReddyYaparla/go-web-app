@@ -128,9 +128,6 @@ cd go-web-app
 # Download dependencies
 go mod download
 
-# Run tests
-go test ./...
-
 # Start the app
 go run main.go
 ```
