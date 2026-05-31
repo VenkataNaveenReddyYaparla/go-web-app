@@ -186,17 +186,6 @@ go-web-app/
 ```bash
 go run main.go
 ```
-
-### Run tests
-
-```bash
-# Basic test run
-go test ./...
-
-# Verbose output
-go test -v ./...
-```
-
 ### Build and run a binary
 
 **Linux / macOS:**
