@@ -1,396 +1,367 @@
-# Go Web App DevOps Project
+# go-web-app — DevOps End-to-End Practice Project
 
-This repository contains a simple Go web application and a complete DevOps practice setup around it. The app serves static HTML pages for Home, About, Contact, and Courses, while the project demonstrates how to build, containerize, deploy, and continuously update an application.
+A production-style DevOps pipeline built around a lightweight Go web application. The project covers everything from local development through containerization, Kubernetes deployment, GitOps with Argo CD, and fully automated CI/CD via GitHub Actions.
+
+---
+
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Application Routes](#application-routes)
+- [Repository Structure](#repository-structure)
+- [Local Development](#local-development)
+- [Docker Build](#docker-build)
+- [Kubernetes Deployment](#kubernetes-deployment)
+  - [Connect to Amazon EKS](#connect-to-amazon-eks)
+  - [Install NGINX Ingress Controller](#install-nginx-ingress-controller)
+  - [Deploy with Raw Manifests](#deploy-with-raw-manifests)
+  - [Deploy with Helm](#deploy-with-helm)
+- [GitOps with Argo CD](#gitops-with-argo-cd)
+  - [Install Argo CD](#install-argo-cd)
+  - [Deploy the Application](#deploy-the-application)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Secrets Configuration](#secrets-configuration)
+- [Troubleshooting](#troubleshooting)
+
+---
 
 ## Project Overview
 
-- Go web server using the `net/http` package
-- Static pages served from the `static/` directory
-- Docker multi-stage build using Go 1.23 and a distroless runtime image
-- GitHub Actions workflow for build, test, lint, Docker image push, and Helm chart tag updates
-- Kubernetes manifests for direct deployment
-- Helm chart for reusable Kubernetes deployment
-- Argo CD compatible GitOps deployment from the Helm chart
+This repository demonstrates a complete DevOps workflow for a Go web application:
+
+- **Application** — Go HTTP server serving four static HTML pages
+- **Containerization** — Docker multi-stage build using a distroless runtime image for minimal attack surface
+- **Kubernetes** — Raw manifests and a Helm chart for flexible deployment
+- **GitOps** — Argo CD tracks the Helm chart in Git and auto-syncs the cluster
+- **CI/CD** — GitHub Actions builds, tests, lints, pushes Docker images, and bumps the Helm chart image tag on every push
+
+---
+
+## Architecture
+
+```
+Developer Push
+      │
+      ▼
+┌─────────────────────────────────────────────────┐
+│              GitHub Actions CI/CD               │
+│  Build → Test → Lint → Docker Push → Helm Tag  │
+└────────────────────┬────────────────────────────┘
+                     │ updates image tag in Git
+                     ▼
+             Git Repository
+             (Helm chart source of truth)
+                     │
+                     │ polls for changes
+                     ▼
+┌─────────────────────────────────────────────────┐
+│                  Argo CD                        │
+│         Syncs Helm chart to cluster             │
+└────────────────────┬────────────────────────────┘
+                     │ deploys
+                     ▼
+┌─────────────────────────────────────────────────┐
+│            Kubernetes (EKS / local)             │
+│  Deployment → Service → Ingress (NGINX)         │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Application | Go 1.23, `net/http` |
+| Containerization | Docker multi-stage, distroless runtime |
+| Orchestration | Kubernetes (EKS / Minikube / Kind) |
+| Package Manager | Helm |
+| GitOps | Argo CD |
+| CI/CD | GitHub Actions |
+| Ingress | NGINX Ingress Controller |
+| Registry | Docker Hub |
+| Cloud (optional) | AWS EKS |
+
+---
 
 ## Prerequisites
 
-Install these tools before running the full project:
+Install the following tools before running the full project:
 
-- Git
-- Go 1.23 or newer
-- Docker
-- AWS CLI, if you deploy to Amazon EKS
-- kubectl
-- Helm
-- Argo CD CLI, if you want to manage Argo CD from the terminal
-- A Kubernetes cluster such as Minikube, Kind, Docker Desktop Kubernetes, EKS, AKS, or GKE
-- Argo CD, if you want GitOps deployment
+| Tool | Purpose | Install |
+|---|---|---|
+| Git | Source control | [git-scm.com](https://git-scm.com) |
+| Go 1.23+ | Build and run the app | [go.dev](https://go.dev/dl) |
+| Docker | Build and run containers | [docs.docker.com](https://docs.docker.com/get-docker) |
+| kubectl | Kubernetes CLI | [kubernetes.io](https://kubernetes.io/docs/tasks/tools) |
+| Helm | Kubernetes package manager | [helm.sh](https://helm.sh/docs/intro/install) |
+| AWS CLI | Connect to EKS (optional) | [aws.amazon.com](https://aws.amazon.com/cli) |
+| Argo CD CLI | Manage Argo CD from terminal (optional) | [argo-cd.readthedocs.io](https://argo-cd.readthedocs.io) |
 
-Check your versions:
+Verify all tools are installed:
 
 ```bash
 git --version
 go version
 docker --version
-aws --version
 kubectl version --client
 helm version
-argocd version --client
+aws --version          # optional
+argocd version --client  # optional
 ```
 
-## Installation
+---
 
-Clone the repository:
+## Quick Start
+
+Get the app running locally in under two minutes:
 
 ```bash
+# Clone the repo
 git clone https://github.com/VenkataNaveenReddyYaparla/go-web-app.git
 cd go-web-app
-```
 
-Download Go modules:
-
-```bash
+# Download dependencies
 go mod download
-```
 
-Verify module dependencies:
-
-```bash
-go mod verify
-```
-
-Run tests:
-
-```bash
+# Run tests
 go test ./...
+
+# Start the app
+go run main.go
 ```
 
-Verify the test run:
+Open in your browser: [http://localhost:8080/home](http://localhost:8080/home)
 
-```bash
-go test -v ./...
+---
+
+## Application Routes
+
+The app runs on port `8080` and serves four routes:
+
+| Route | Description |
+|---|---|
+| `/home` | Home page |
+| `/about` | About page |
+| `/contact` | Contact page |
+| `/courses` | Courses page |
+
+---
+
+## Repository Structure
+
+```
+go-web-app/
+├── .github/
+│   └── workflows/
+│       └── ci.yaml              # GitHub Actions CI/CD pipeline
+├── helm/
+│   └── go-web-app-charts/
+│       ├── Chart.yaml           # Helm chart metadata
+│       ├── values.yaml          # Default values (image tag updated by CI)
+│       └── templates/           # Kubernetes manifest templates
+├── k8s/
+│   └── manisfests/
+│       ├── deployment.yaml      # Kubernetes Deployment
+│       ├── service.yaml         # Kubernetes Service
+│       └── ingress.yaml         # NGINX Ingress
+├── static/
+│   ├── home.html
+│   ├── about.html
+│   ├── contact.html
+│   └── courses.html
+├── Dockerfile                   # Multi-stage Docker build
+├── go.mod
+├── main.go                      # Go HTTP server
+└── main_test.go                 # Unit tests
 ```
 
-Start the application locally:
+---
+
+## Local Development
+
+### Run from source
 
 ```bash
 go run main.go
 ```
 
-Open the app:
+### Run tests
 
-```text
-http://localhost:8080/home
+```bash
+# Basic test run
+go test ./...
+
+# Verbose output
+go test -v ./...
 ```
 
-Verify the app responds:
+### Build and run a binary
+
+**Linux / macOS:**
+```bash
+go build -o main .
+./main
+```
+
+**Windows (PowerShell):**
+```powershell
+go build -o main.exe .
+.\main.exe
+```
+
+Verify the app is responding:
 
 ```bash
 curl http://localhost:8080/home
 ```
 
-## Application Routes
+---
 
-```text
-/home
-/about
-/contact
-/courses
-```
+## Docker Build
 
-The application runs on port `8080`.
+The `Dockerfile` uses a two-stage build:
 
-## Repository Structure
-
-```text
-.
-|-- .github/workflows/ci.yaml
-|-- Dockerfile
-|-- go.mod
-|-- main.go
-|-- main_test.go
-|-- static/
-|   |-- home.html
-|   |-- about.html
-|   |-- contact.html
-|   `-- courses.html
-|-- k8s/manisfests/
-|   |-- deployment.yaml
-|   |-- service.yaml
-|   `-- ingress.yaml
-`-- helm/go-web-app-charts/
-    |-- Chart.yaml
-    |-- values.yaml
-    `-- templates/
-```
-
-## Run Locally
+1. **Build stage** — compiles the Go binary using `golang:1.23`
+2. **Runtime stage** — copies only the binary into a distroless image, keeping the final image minimal and secure
 
 ```bash
-go run main.go
-```
-
-Open the app:
-
-```text
-http://localhost:8080/home
-```
-
-Run tests:
-
-```bash
-go test ./...
-```
-
-## Build And Run Locally
-
-Build the application binary:
-
-```powershell
-go build -o main.exe .
-```
-
-Verify the binary was created:
-
-```powershell
-Get-ChildItem .\main.exe
-```
-
-Run the application:
-
-```powershell
-.\main.exe
-```
-
-Open the app:
-
-```text
-http://localhost:8080/home
-```
-
-Verify the running app from another terminal:
-
-```powershell
-Invoke-WebRequest http://localhost:8080/home
-```
-
-## Build With Docker
-
-Build the image:
-
-```bash
+# Build the image
 docker build -t go-web-app:local .
-```
 
-Verify the image:
-
-```bash
+# Verify the image was created
 docker images go-web-app
-```
 
-Run the container:
-
-```bash
+# Run the container
 docker run -p 8080:8080 go-web-app:local
-```
 
-Open the app:
-
-```text
-http://localhost:8080/home
-```
-
-Verify the container is running:
-
-```bash
+# Verify it's running
 docker ps
 curl http://localhost:8080/home
 ```
 
-## Connect To Amazon EKS
+---
 
-Verify AWS CLI authentication:
+## Kubernetes Deployment
+
+### Connect to Amazon EKS
+
+Skip this section if you are using a local cluster (Minikube, Kind, Docker Desktop).
 
 ```bash
+# Confirm AWS credentials
 aws sts get-caller-identity
-```
 
-Update your local kubeconfig for the EKS cluster:
-
-```bash
+# Pull cluster credentials into kubeconfig
 aws eks update-kubeconfig --region us-east-1 --name demo-cluster
-```
 
-Verify the Kubernetes context:
-
-```bash
+# Verify the context and nodes
 kubectl config current-context
 kubectl get nodes
 ```
 
-## Install NGINX Ingress Controller On EKS
+### Install NGINX Ingress Controller
 
-Install the AWS provider manifest for ingress-nginx:
+Required to route external traffic to the application via the Ingress resource.
 
 ```bash
+# Install the AWS-flavoured ingress-nginx
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/aws/deploy.yaml
-```
 
-Verify the controller pods and service:
+# Watch the controller come up
+kubectl get pods -n ingress-nginx --watch
 
-```bash
-kubectl get pods -n ingress-nginx
-kubectl get svc -n ingress-nginx
-```
-
-Wait for the external load balancer address:
-
-```bash
+# Confirm the LoadBalancer service has an external address (takes ~2 min on EKS)
 kubectl get svc ingress-nginx-controller -n ingress-nginx
 ```
 
-## Deploy With Kubernetes Manifests
+### Deploy with Raw Manifests
 
-Apply the manifests:
+Use this approach for quick testing or when you don't need Helm templating.
 
 ```bash
+# Apply all three manifests at once
 kubectl apply -f k8s/manisfests/
-```
 
-Check the resources:
-
-```bash
-kubectl get pods
-kubectl get svc
-kubectl get ingress
-```
-
-Verify the application pods are ready:
-
-```bash
+# Check rollout status
 kubectl rollout status deployment/go-web-app
-kubectl get endpoints
-```
 
-Remove the deployment:
+# Inspect all created resources
+kubectl get pods,svc,ingress
 
-```bash
+# Remove everything
 kubectl delete -f k8s/manisfests/
 ```
 
-## Deploy With Helm
+### Deploy with Helm
 
-Install the chart:
+Helm adds templating, versioned releases, and easy rollbacks.
 
 ```bash
+# Install the chart
 helm install go-web-app helm/go-web-app-charts
-```
 
-Check the release:
-
-```bash
+# Check the release and pods
 helm list
-kubectl get pods
-kubectl get svc
-```
+kubectl get pods,svc
 
-Verify the Helm deployment:
-
-```bash
-helm status go-web-app
-kubectl rollout status deployment/go-web-app
-```
-
-Upgrade after changes:
-
-```bash
+# Upgrade after a values or template change
 helm upgrade go-web-app helm/go-web-app-charts
-```
 
-Uninstall:
+# Verify the rollout after upgrade
+kubectl rollout status deployment/go-web-app
 
-```bash
+# Remove the release
 helm uninstall go-web-app
 ```
 
-## Install Argo CD
+---
 
-Create the Argo CD namespace:
+## GitOps with Argo CD
+
+Argo CD continuously watches the Helm chart in this Git repo and reconciles any drift between Git and the cluster. The GitHub Actions pipeline updates `values.yaml` with the new image tag after each successful build, which Argo CD picks up and rolls out automatically.
+
+### Install Argo CD
 
 ```bash
+# Create the namespace
 kubectl create namespace argocd
-```
 
-Verify the namespace:
-
-```bash
-kubectl get namespace argocd
-```
-
-Install Argo CD:
-
-```bash
+# Install Argo CD
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-```
 
-Verify the Argo CD pods:
-
-```bash
-kubectl get pods -n argocd
+# Wait for the server to become available
 kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
-```
 
-Expose the Argo CD server with a LoadBalancer service:
-
-```bash
+# Expose the server via a LoadBalancer (or use port-forward for local access)
 kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-```
 
-Verify the service and wait for the external address:
-
-```bash
+# Retrieve the external address
 kubectl get svc argocd-server -n argocd
 ```
 
-Verify the Argo CD CLI:
+**Get the initial admin password:**
 
 ```bash
-argocd version --client
-```
+# Linux / macOS
+kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 -d
 
-Get the initial admin password:
-
-```bash
-kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}"
-```
-
-Decode the password:
-
-```bash
-kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
-```
-
-PowerShell decode:
-
-```powershell
+# Windows PowerShell
 $password = kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}"
 [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($password))
 ```
 
-## Deploy With Argo CD
+### Deploy the Application
 
-Use this repository as the Git source and point Argo CD to the Helm chart path:
-
-```text
-Repository URL: https://github.com/VenkataNaveenReddyYaparla/go-web-app.git
-Revision: main
-Path: helm/go-web-app-charts
-Namespace: default
-```
-
-Example Argo CD Application manifest:
+Create an Argo CD Application that points to the Helm chart in this repo:
 
 ```yaml
+# application.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -408,44 +379,111 @@ spec:
     namespace: default
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: true      # removes resources deleted from Git
+      selfHeal: true   # corrects manual changes made directly in the cluster
 ```
 
-Apply it:
-
 ```bash
+# Apply the Application manifest
 kubectl apply -f application.yaml
-```
 
-Verify Argo CD created and synced the application:
-
-```bash
+# Confirm Argo CD synced and the app is healthy
 kubectl get application go-web-app -n argocd
-kubectl get pods
-kubectl get svc
+kubectl get pods,svc
 ```
 
-Argo CD can sync the Helm chart and keep the Kubernetes deployment updated from Git.
+**Argo CD connection details:**
 
-## CI/CD Workflow
+| Field | Value |
+|---|---|
+| Repository URL | `https://github.com/VenkataNaveenReddyYaparla/go-web-app.git` |
+| Revision | `main` |
+| Chart path | `helm/go-web-app-charts` |
+| Destination namespace | `default` |
 
-The GitHub Actions workflow:
+---
 
-1. Builds the Go application.
-2. Runs tests.
-3. Runs `golangci-lint`.
-4. Builds and pushes a Docker image to Docker Hub.
-5. Updates the Helm chart image tag with the GitHub Actions run ID.
+## CI/CD Pipeline
 
-Required GitHub secrets:
+The GitHub Actions workflow (`.github/workflows/ci.yaml`) runs on every push and pull request to `main`.
 
-```text
-DOCKERHUB_USERNAME
-DOCKERHUB_TOKEN
-TOKEN
+### Pipeline Stages
+
 ```
+Push to main
+    │
+    ├─► Build         go build ./...
+    ├─► Test          go test ./...
+    ├─► Lint          golangci-lint run
+    ├─► Docker Build  docker build + push to Docker Hub
+    └─► Helm Update   sed image tag in values.yaml → commit back to repo
+                              │
+                              └─► Argo CD detects change → auto-sync → rolling update
+```
+
+### What each step does
+
+| Step | Details |
+|---|---|
+| **Build** | Compiles the Go application to catch any compilation errors |
+| **Test** | Runs all unit tests with `go test ./...` |
+| **Lint** | Runs `golangci-lint` to enforce code quality |
+| **Docker Build & Push** | Builds a multi-stage image and pushes to Docker Hub with the GitHub Actions run ID as the tag |
+| **Helm Tag Update** | Updates the `image.tag` in `values.yaml` to match the newly pushed Docker image tag, then commits and pushes the change back to the repo |
+
+---
+
+## Secrets Configuration
+
+Add these secrets to your GitHub repository under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|---|---|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token (not your password) |
+| `TOKEN` | GitHub personal access token with `repo` scope — used to commit the Helm tag update back to the repo |
+
+---
+
+## Troubleshooting
+
+**Pods stuck in `Pending`**
+```bash
+kubectl describe pod <pod-name>
+# Look for: Insufficient CPU/memory, no schedulable nodes, PVC not bound
+```
+
+**Ingress has no external address**
+```bash
+kubectl get svc ingress-nginx-controller -n ingress-nginx
+# If EXTERNAL-IP is <pending>, the LoadBalancer provisioner may still be initializing — wait ~2 minutes on EKS
+```
+
+**Argo CD not syncing**
+```bash
+kubectl get application go-web-app -n argocd -o yaml
+# Check .status.conditions for error details
+# Common cause: Git repo URL or chart path mismatch
+```
+
+**Docker image not found after CI push**
+```bash
+# Confirm the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets are set correctly
+# Check the GitHub Actions run logs for the docker/push step
+```
+
+**Go module errors**
+```bash
+go mod tidy
+go mod verify
+```
+
+---
 
 ## Screenshot
 
 ![Website](static/images/image.png)
+
+---
+
+> Built by [VenkataNaveenReddyYaparla](https://github.com/VenkataNaveenReddyYaparla) as a hands-on DevOps portfolio project.
